@@ -32,7 +32,7 @@ amd_common_files = files(
   'ac_binary.c',
   'ac_binary.h',
   'ac_exp_param.h',
-  'ac_llvm_build.c',
+  'ac_llvm_build.cpp',
   'ac_llvm_build.h',
   'ac_llvm_helper.cpp',
   'ac_llvm_util.c',
