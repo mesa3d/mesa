@@ -47,6 +47,10 @@
 #  include <errno.h>
 #elif defined(PIPE_SUBSYSTEM_WINDOWS_USER)
 #  include <windows.h>
+#elif defined(PIPE_OS_VALI)
+#  include <os/mollenos.h>
+#  include <threads.h> /* thrd_sleep */
+#  include <time.h>
 #else
 #  error Unsupported OS
 #endif
@@ -83,6 +87,12 @@ os_time_get_nano(void)
       / frequency.QuadPart;
    return secs*INT64_C(1000000000) + nanosecs;
 
+#elif defined(PIPE_OS_VALI)
+
+   struct timespec tv;
+   timespec_get(&tv, TIME_MONOTONIC);
+   return tv.tv_nsec + tv.tv_sec*INT64_C(1000000000);
+
 #else
 
 #error Unsupported OS
@@ -110,6 +120,13 @@ os_time_sleep(int64_t usecs)
    if (dwMilliseconds) {
       Sleep(dwMilliseconds);
    }
+
+#elif defined(PIPE_OS_VALI)
+   struct timespec ts;
+   ts.tv_sec = usecs / 1000000;
+   ts.tv_nsec = (usecs % 1000000) * 1000;
+   thrd_sleep(&ts, &ts);
+
 #else
 #  error Unsupported OS
 #endif

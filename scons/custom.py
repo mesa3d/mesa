@@ -129,6 +129,16 @@ def code_generate(env, script, target, source, command):
     http://www.scons.org/wiki/UsingCodeGenerators
     http://www.scons.org/doc/0.98.5/HTML/scons-user/c2768.html
     """
+    print(env.File(script).srcnode().path + ": " + str(source) + " => " + str(target))
+    fscript_path = env.File(script).srcnode().abspath
+    fsource_path = ""
+    if len(source) > 0:
+        fsource_path = env.File(source[0]).srcnode().abspath
+    
+    our_command = command
+    our_command = our_command.replace("$SCRIPT", fscript_path)
+    our_command = our_command.replace("$SOURCE", fsource_path).replace("$TARGET", env.File(target).srcnode().abspath)
+    subprocess.call(our_command, shell=True)
 
     # We're generating code using Python scripts, so we have to be
     # careful with our scons elements.  This entry represents

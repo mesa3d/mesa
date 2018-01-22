@@ -35,6 +35,10 @@
 #define TIME_UTC 1
 #endif
 
+#if defined(MOLLENOS)
+#include <threads.h>
+#else
+
 #include "c99_compat.h" /* for `inline` */
 
 /*---------------------------- types ----------------------------*/
@@ -68,6 +72,6 @@ enum {
 #error Not supported on this platform.
 #endif
 
-
+#endif
 
 #endif /* EMULATED_THREADS_H_INCLUDED_ */

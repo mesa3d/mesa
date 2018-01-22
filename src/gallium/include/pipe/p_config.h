@@ -213,6 +213,10 @@
 #define PIPE_OS_UNIX
 #endif
 
+#if defined(MOLLENOS)
+#define PIPE_OS_VALI
+#endif
+
 /*
  * Try to auto-detect the subsystem.
  * 

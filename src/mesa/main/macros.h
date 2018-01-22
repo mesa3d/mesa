@@ -677,6 +677,9 @@ minify(unsigned value, unsigned levels)
  *
  * \sa ROUND_DOWN_TO()
  */
+#ifdef ALIGN
+#undef ALIGN
+#endif
 static inline uintptr_t
 ALIGN(uintptr_t value, int32_t alignment)
 {

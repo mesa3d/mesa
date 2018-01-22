@@ -25,10 +25,14 @@
 #include "macros.h"
 #include "u_atomic.h"
 #include <stdint.h>
+#include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
 
+#ifdef ALIGN
+#undef ALIGN
 #define ALIGN(value, align) (((value) + (align) - 1) & ~((align) - 1))
+#endif
 
 #define SLAB_MAGIC_ALLOCATED 0xcafe4321
 #define SLAB_MAGIC_FREE 0x7ee01234

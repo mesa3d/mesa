@@ -43,7 +43,11 @@ static void util_queue_killall_and_wait(struct util_queue *queue);
 
 static once_flag atexit_once_flag = ONCE_FLAG_INIT;
 static struct list_head queue_list;
+#if defined(MOLLENOS)
+static mtx_t exit_mutex = UUID_INVALID;
+#else
 static mtx_t exit_mutex = _MTX_INITIALIZER_NP;
+#endif
 
 static void
 atexit_handler(void)
