@@ -41,7 +41,7 @@ import SCons.Builder
 import SCons.Tool
 import SCons.Util
 import SCons.Node
-from SCons.Tool import createObjBuilders
+from SCons.Tool import createObjBuilders, createCFileBuilders
 
 def compile_type(lang, target, source_object, env):
     code = 1
@@ -73,7 +73,7 @@ def compile_type(lang, target, source_object, env):
         # Build argument string
         if lang == "c":
             Compiler = env['CC'] + " -c " + env['CFLAGS'][0]
-        elif lang == "cxx":
+        elif lang == "cpp":
             Compiler = env['CXX'] + " -c " + env['CXXFLAGS'][0]
         else:
             print("Unknown language: " + lang)
@@ -114,14 +114,14 @@ def compile_type(lang, target, source_object, env):
 
 def c_emitter(target, source, env):
     for srcfile in source:
-        code = compile_type("c", target[0], srcfile.srcnode().abspath, env)
+        code = compile_type(srcfile.srcnode().abspath[srcfile.srcnode().abspath.rfind('.') + 1:], target[0], srcfile.srcnode().abspath, env)
         if code != 0:
             sys.exit(code)
     return (target, source)
 
 def cxx_emitter(target, source, env):
     for srcfile in source:
-        compile_type("cxx", target[0], srcfile.srcnode().abspath, env)
+        code = compile_type(srcfile.srcnode().abspath[srcfile.srcnode().abspath.rfind('.') + 1:], target[0], srcfile.srcnode().abspath, env)
         if code != 0:
             sys.exit(code)
     return (target, source)
@@ -137,9 +137,18 @@ def lib_emitter(target, source, env):
         sys.exit(code)
     return (target, source)
 
+def get_link_options(env):
+    ExtraLibraries = ""
+    for lib in env['LIBS']:
+        if isinstance(lib, SCons.Node.NodeList):
+            for innerlib in lib:
+                ExtraLibraries += " " + innerlib.abspath
+    LinkFlags = env['LINK_FLAGS'] + ExtraLibraries
+    return LinkFlags
+
 def shlib_emitter(target, source, env):
     # Link objects
-    LinkFlags = env['LINK_FLAGS'] + " /dll /lldmap /entry:__CrtLibraryEntry /out:" + target[0].abspath + " "
+    LinkFlags = get_link_options(env) + " /dll /lldmap /entry:__CrtLibraryEntry /out:" + target[0].abspath + " "
     for obj in source:
         LinkFlags += " " + obj.abspath
     print("Linking shared library: " + target[0].abspath)
@@ -150,16 +159,9 @@ def shlib_emitter(target, source, env):
 
 def program_emitter(target, source, env):
     # Link objects
-    ExtraLibraries = ""
-    for lib in env['LIBS']:
-        if isinstance(lib, list):
-            for innerlib in lib:
-                ExtraLibraries += " " + innerlib.abspath
-    
-    LinkFlags = env['LINK_FLAGS'] + ExtraLibraries + " /lldmap /entry:__CrtConsoleEntry /out:" + target[0].abspath + " "
+    LinkFlags = get_link_options(env) + " /lldmap /entry:__CrtConsoleEntry /out:" + target[0].abspath + " "
     for obj in source:
         LinkFlags += " " + obj.abspath
-    print("Libs to include: " + ExtraLibraries)
     print("Linking application: " + target[0].abspath)
     code = subprocess.call(env['LD'] + LinkFlags, shell=True)
     if code is not 0:
@@ -169,7 +171,7 @@ def program_emitter(target, source, env):
 def generate(env):
     # Most of vali is the same as clang and friends...
     #vali_tools = ['clang', 'clang++', 'lld-link', 'ar', 'ranlib']
-    vali_tools = ['gcc', 'g++', 'gnulink', 'ar', 'gas']
+    vali_tools = ['gcc', 'g++', 'gnulink', 'ar', 'gas', 'lex', 'yacc']
     for tool in vali_tools:
         SCons.Tool.Tool(tool)(env)
     
@@ -222,12 +224,16 @@ def generate(env):
     env.Append(PROGEMITTER          = [program_emitter])
     env.Append(SHLIBEMITTER         = [shlib_emitter])
     env.Append(LIBEMITTER           = [lib_emitter])
+    env.CFile                       = SCons.Builder.Builder(action = c_emitter)
+    env.CXXFile                     = SCons.Builder.Builder(action = cxx_emitter)
 
     # Get the underlying builder objects
     static_obj, shared_obj = createObjBuilders(env)
+
     static_obj.add_emitter('.c', c_emitter)
-    static_obj.add_emitter('.cpp', cxx_emitter)
     shared_obj.add_emitter('.c', c_emitter)
+
+    static_obj.add_emitter('.cpp', cxx_emitter)
     shared_obj.add_emitter('.cpp', cxx_emitter)
 
 def exists(env):
