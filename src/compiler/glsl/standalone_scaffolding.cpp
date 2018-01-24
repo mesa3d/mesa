@@ -32,6 +32,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 #include "util/ralloc.h"
 #include "util/strtod.h"
 
