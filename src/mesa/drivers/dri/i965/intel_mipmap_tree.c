@@ -717,6 +717,9 @@ miptree_create(struct brw_context *brw,
          ISL_SURF_USAGE_DEPTH_BIT | ISL_SURF_USAGE_TEXTURE_BIT,
          BO_ALLOC_BUSY, 0, NULL);
 
+      if (!mt)
+         return NULL;
+
       if (needs_separate_stencil(brw, mt, format) &&
           !make_separate_stencil_surface(brw, mt)) {
          intel_miptree_release(&mt);
