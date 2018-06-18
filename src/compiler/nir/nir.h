@@ -3168,7 +3168,7 @@ bool nir_opt_move_comparisons(nir_shader *shader);
 bool nir_opt_move_load_ubo(nir_shader *shader);
 
 bool nir_opt_peephole_select(nir_shader *shader, unsigned limit,
-                             bool indirect_load_ok);
+                             bool indirect_load_ok, bool expensive_alu_ok);
 
 bool nir_opt_remove_phis_impl(nir_function_impl *impl);
 bool nir_opt_remove_phis(nir_shader *shader);
