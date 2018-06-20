@@ -47,7 +47,7 @@ writemasks_incompatible(const vec4_instruction *earlier,
 }
 
 static bool
-opt_cmod_propagation_local(bblock_t *block)
+opt_cmod_propagation_local(bblock_t *block, vec4_visitor *v)
 {
    bool progress = false;
    int ip = block->end_ip + 1;
@@ -146,11 +146,108 @@ opt_cmod_propagation_local(bblock_t *block)
                              scan_inst->dst, scan_inst->size_written)) {
             if ((scan_inst->predicate && scan_inst->opcode != BRW_OPCODE_SEL) ||
                 scan_inst->dst.offset != inst->src[0].offset ||
-                writemasks_incompatible(scan_inst, inst) ||
                 scan_inst->exec_size != inst->exec_size ||
                 scan_inst->group != inst->group) {
                break;
             }
+
+            /* If scan_inst is a CMP that produces a single value and inst is
+             * a CMP.NZ that consumes only that value, remove inst.
+             */
+            if (inst->conditional_mod == BRW_CONDITIONAL_NZ &&
+                (inst->src[0].type == BRW_REGISTER_TYPE_D ||
+                 inst->src[0].type == BRW_REGISTER_TYPE_UD) &&
+                (inst->opcode == BRW_OPCODE_CMP ||
+                 inst->opcode == BRW_OPCODE_MOV) &&
+                scan_inst->opcode == BRW_OPCODE_CMP &&
+                ((inst->src[0].swizzle == BRW_SWIZZLE_XXXX &&
+                  scan_inst->dst.writemask == WRITEMASK_X) ||
+                 (inst->src[0].swizzle == BRW_SWIZZLE_YYYY &&
+                  scan_inst->dst.writemask == WRITEMASK_Y) ||
+                 (inst->src[0].swizzle == BRW_SWIZZLE_ZZZZ &&
+                  scan_inst->dst.writemask == WRITEMASK_Z) ||
+                 (inst->src[0].swizzle == BRW_SWIZZLE_WWWW &&
+                  scan_inst->dst.writemask == WRITEMASK_W))) {
+               if (inst->dst.writemask != scan_inst->dst.writemask) {
+                  src_reg temp(v, glsl_type::vec4_type, 1);
+
+                  /* Given a sequence like:
+                   *
+                   *    cmp.ge.f0(8)  g21<1>.xF      g20<4>.xF      g18<4>.xF
+                   *    ...
+                   *    cmp.nz.f0(8)  null<1>D       g21<4>.xD      0D
+                   *
+                   * Replace it with something like:
+                   *
+                   *    cmp.ge.f0(8)  g22<1>F        g20<4>.xF      g18<4>.xF
+                   *    mov(8)        g21<1>.xF      g22<1>.xxxxF
+                   *
+                   * The added MOV will most likely be removed later.  In the
+                   * worst case, it should be cheaper to schedule.
+                   */
+                  temp.swizzle = inst->src[0].swizzle;
+                  temp.type = scan_inst->src[0].type;
+
+                  vec4_instruction *mov = v->MOV(scan_inst->dst, temp);
+
+                  /* Modify the source swizzles on scan_inst.  If scan_inst
+                   * was
+                   *
+                   *    cmp.ge.f0(8)  g21<1>.zF      g20<4>.wzyxF   g18<4>.yxwzF
+                   *
+                   * replace it with
+                   *
+                   *    cmp.ge.f0(8)  g21<1>.zF      g20<4>.yyyyF   g18<4>.wwwwF
+                   */
+                  unsigned src0_chan;
+                  unsigned src1_chan;
+                  switch (scan_inst->dst.writemask) {
+                  case WRITEMASK_X:
+                     src0_chan = BRW_GET_SWZ(scan_inst->src[0].swizzle, 0);
+                     src1_chan = BRW_GET_SWZ(scan_inst->src[1].swizzle, 0);
+                     break;
+                  case WRITEMASK_Y:
+                     src0_chan = BRW_GET_SWZ(scan_inst->src[0].swizzle, 1);
+                     src1_chan = BRW_GET_SWZ(scan_inst->src[1].swizzle, 1);
+                     break;
+                  case WRITEMASK_Z:
+                     src0_chan = BRW_GET_SWZ(scan_inst->src[0].swizzle, 2);
+                     src1_chan = BRW_GET_SWZ(scan_inst->src[1].swizzle, 2);
+                     break;
+                  case WRITEMASK_W:
+                     src0_chan = BRW_GET_SWZ(scan_inst->src[0].swizzle, 3);
+                     src1_chan = BRW_GET_SWZ(scan_inst->src[1].swizzle, 3);
+                     break;
+                  default:
+                     unreachable("Impossible writemask");
+                  }
+
+                  scan_inst->src[0].swizzle = BRW_SWIZZLE4(src0_chan,
+                                                           src0_chan,
+                                                           src0_chan,
+                                                           src0_chan);
+
+                  /* There's no swizzle on immediate value sources. */
+                  if (scan_inst->src[1].file != IMM) {
+                     scan_inst->src[1].swizzle = BRW_SWIZZLE4(src1_chan,
+                                                              src1_chan,
+                                                              src1_chan,
+                                                              src1_chan);
+                  }
+
+                  scan_inst->dst = dst_reg(temp);
+                  scan_inst->dst.writemask = inst->dst.writemask;
+
+                  scan_inst->insert_after(block, mov);
+               }
+
+               inst->remove(block);
+               progress = true;
+               break;
+            }
+
+            if (writemasks_incompatible(scan_inst, inst))
+               break;
 
             /* CMP's result is the same regardless of dest type. */
             if (inst->conditional_mod == BRW_CONDITIONAL_NZ &&
@@ -256,7 +353,7 @@ vec4_visitor::opt_cmod_propagation()
    bool progress = false;
 
    foreach_block_reverse(block, cfg) {
-      progress = opt_cmod_propagation_local(block) || progress;
+      progress = opt_cmod_propagation_local(block, this) || progress;
    }
 
    if (progress)
