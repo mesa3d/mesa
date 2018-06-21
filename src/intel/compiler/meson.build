@@ -146,7 +146,8 @@ if with_tests
   foreach t : ['fs_cmod_propagation', 'fs_copy_propagation',
                'fs_saturate_propagation', 'vf_float_conversions',
                'vec4_register_coalesce', 'vec4_copy_propagation',
-               'vec4_cmod_propagation', 'eu_compact', 'eu_validate']
+               'vec4_cmod_propagation', 'vec4_dead_code_eliminate',
+               'eu_compact', 'eu_validate']
     test(
       t,
       executable(

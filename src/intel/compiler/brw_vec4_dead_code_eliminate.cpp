@@ -81,17 +81,46 @@ vec4_visitor::dead_code_eliminate()
                result_live[3] = result;
             }
 
-            for (int c = 0; c < 4; c++) {
-               if (!result_live[c] && inst->dst.writemask & (1 << c)) {
-                  inst->dst.writemask &= ~(1 << c);
-                  progress = true;
+            if (inst->writes_flag()) {
+               /* Independently calculate the usage of the flag components and
+                * the destination value components.
+                */
+               uint8_t flag_mask = inst->dst.writemask;
+               uint8_t dest_mask = inst->dst.writemask;
 
-                  if (inst->dst.writemask == 0) {
-                     if (inst->writes_accumulator || inst->writes_flag()) {
-                        inst->dst = dst_reg(retype(brw_null_reg(), inst->dst.type));
-                     } else {
-                        inst->opcode = BRW_OPCODE_NOP;
-                        break;
+               for (int c = 0; c < 4; c++) {
+                  if (!result_live[c] && dest_mask & (1 << c))
+                     dest_mask &= ~(1 << c);
+
+                  if (!BITSET_TEST(flag_live, c))
+                     flag_mask &= ~(1 << c);
+               }
+
+               if (inst->dst.writemask != (flag_mask | dest_mask)) {
+                  progress = true;
+                  inst->dst.writemask = flag_mask | dest_mask;
+               }
+
+               /* If none of the destination components are read, replace the
+                * destination register with the NULL register.
+                */
+               if (dest_mask == 0) {
+                  progress = true;
+                  inst->dst = dst_reg(retype(brw_null_reg(), inst->dst.type));
+               }
+            } else {
+               for (int c = 0; c < 4; c++) {
+                  if (!result_live[c] && inst->dst.writemask & (1 << c)) {
+                     inst->dst.writemask &= ~(1 << c);
+                     progress = true;
+
+                     if (inst->dst.writemask == 0) {
+                        if (inst->writes_accumulator) {
+                           inst->dst = dst_reg(retype(brw_null_reg(), inst->dst.type));
+                        } else {
+                           inst->opcode = BRW_OPCODE_NOP;
+                           break;
+                        }
                      }
                   }
                }

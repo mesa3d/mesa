@@ -64,6 +64,7 @@ COMPILER_TESTS = \
 	compiler/test_vf_float_conversions \
 	compiler/test_vec4_cmod_propagation \
 	compiler/test_vec4_copy_propagation \
+	compiler/test_vec4_dead_code_eliminate \
 	compiler/test_vec4_register_coalesce
 
 TESTS += $(COMPILER_TESTS)
@@ -96,6 +97,10 @@ compiler_test_vec4_copy_propagation_LDADD = $(TEST_LIBS)
 compiler_test_vec4_cmod_propagation_SOURCES = \
 	compiler/test_vec4_cmod_propagation.cpp
 compiler_test_vec4_cmod_propagation_LDADD = $(TEST_LIBS)
+
+compiler_test_vec4_dead_code_eliminate_SOURCES = \
+	compiler/test_vec4_dead_code_eliminate.cpp
+compiler_test_vec4_dead_code_eliminate_LDADD = $(TEST_LIBS)
 
 # Strictly speaking this is neither a C++ test nor using gtest - we can address
 # address that at a later point. Until then, this allows us a to simplify things.
