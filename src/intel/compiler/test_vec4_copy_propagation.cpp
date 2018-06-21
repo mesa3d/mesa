@@ -54,7 +54,7 @@ public:
    }
 
 protected:
-   virtual dst_reg *make_reg_for_system_value(int location)
+   virtual dst_reg *make_reg_for_system_value(int /* location */)
    {
       unreachable("Not reached");
    }
@@ -74,12 +74,12 @@ protected:
       unreachable("Not reached");
    }
 
-   virtual void emit_urb_write_header(int mrf)
+   virtual void emit_urb_write_header(int /* mrf */)
    {
       unreachable("Not reached");
    }
 
-   virtual vec4_instruction *emit_urb_write_opcode(bool complete)
+   virtual vec4_instruction *emit_urb_write_opcode(bool /* complete */)
    {
       unreachable("Not reached");
    }
