@@ -2406,6 +2406,16 @@ fs_visitor::opt_algebraic()
    foreach_block_and_inst(block, fs_inst, inst, cfg) {
       switch (inst->opcode) {
       case BRW_OPCODE_MOV:
+         if ((inst->conditional_mod == BRW_CONDITIONAL_Z ||
+              inst->conditional_mod == BRW_CONDITIONAL_NZ) &&
+             inst->dst.is_null() &&
+             (inst->src[0].abs || inst->src[0].negate)) {
+            inst->src[0].abs = false;
+            inst->src[0].negate = false;
+            progress = true;
+            break;
+         }
+
          if (inst->src[0].file != IMM)
             break;
 
@@ -2510,13 +2520,12 @@ fs_visitor::opt_algebraic()
          }
          break;
       case BRW_OPCODE_CMP:
-         if (inst->conditional_mod == BRW_CONDITIONAL_GE &&
-             inst->src[0].abs &&
-             inst->src[0].negate &&
-             inst->src[1].is_zero()) {
+         if ((inst->conditional_mod == BRW_CONDITIONAL_Z ||
+              inst->conditional_mod == BRW_CONDITIONAL_NZ) &&
+             inst->src[1].is_zero() &&
+             (inst->src[0].abs || inst->src[0].negate)) {
             inst->src[0].abs = false;
             inst->src[0].negate = false;
-            inst->conditional_mod = BRW_CONDITIONAL_Z;
             progress = true;
             break;
          }
