@@ -58,7 +58,8 @@
  */
 
 static bool
-block_check_for_allowed_instrs(nir_block *block, unsigned *count, bool alu_ok)
+block_check_for_allowed_instrs(nir_block *block, unsigned *count,
+                               bool alu_ok, bool indirect_load_ok)
 {
    nir_foreach_instr(instr, block) {
       switch (instr->type) {
@@ -66,16 +67,26 @@ block_check_for_allowed_instrs(nir_block *block, unsigned *count, bool alu_ok)
          nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
 
          switch (intrin->intrinsic) {
-         case nir_intrinsic_load_deref:
-            switch (nir_src_as_deref(intrin->src[0])->mode) {
+         case nir_intrinsic_load_deref: {
+            nir_deref_instr *const deref = nir_src_as_deref(intrin->src[0]);
+
+            switch (deref->mode) {
             case nir_var_shader_in:
             case nir_var_uniform:
+               /* Don't try to remove flow control around an indirect load
+                * because that flow control may be trying to avoid invalid
+                * loads.
+                */
+               if (!indirect_load_ok && nir_deref_instr_has_indirect(deref))
+                  return false;
+
                break;
 
             default:
                return false;
             }
             break;
+         }
 
          case nir_intrinsic_load_uniform:
             if (!alu_ok)
@@ -149,7 +160,7 @@ block_check_for_allowed_instrs(nir_block *block, unsigned *count, bool alu_ok)
 
 static bool
 nir_opt_peephole_select_block(nir_block *block, nir_shader *shader,
-                              unsigned limit)
+                              unsigned limit, bool indirect_load_ok)
 {
    if (nir_cf_node_is_first(&block->cf_node))
       return false;
@@ -169,8 +180,10 @@ nir_opt_peephole_select_block(nir_block *block, nir_shader *shader,
 
    /* ... and those blocks must only contain "allowed" instructions. */
    unsigned count = 0;
-   if (!block_check_for_allowed_instrs(then_block, &count, limit != 0) ||
-       !block_check_for_allowed_instrs(else_block, &count, limit != 0))
+   if (!block_check_for_allowed_instrs(then_block, &count, limit != 0,
+                                       indirect_load_ok) ||
+       !block_check_for_allowed_instrs(else_block, &count, limit != 0,
+                                       indirect_load_ok))
       return false;
 
    if (count > limit)
@@ -236,13 +249,15 @@ nir_opt_peephole_select_block(nir_block *block, nir_shader *shader,
 }
 
 static bool
-nir_opt_peephole_select_impl(nir_function_impl *impl, unsigned limit)
+nir_opt_peephole_select_impl(nir_function_impl *impl, unsigned limit,
+                             bool indirect_load_ok)
 {
    nir_shader *shader = impl->function->shader;
    bool progress = false;
 
    nir_foreach_block_safe(block, impl) {
-      progress |= nir_opt_peephole_select_block(block, shader, limit);
+      progress |= nir_opt_peephole_select_block(block, shader, limit,
+                                                indirect_load_ok);
    }
 
    if (progress)
@@ -252,13 +267,15 @@ nir_opt_peephole_select_impl(nir_function_impl *impl, unsigned limit)
 }
 
 bool
-nir_opt_peephole_select(nir_shader *shader, unsigned limit)
+nir_opt_peephole_select(nir_shader *shader, unsigned limit,
+                        bool indirect_load_ok)
 {
    bool progress = false;
 
    nir_foreach_function(function, shader) {
       if (function->impl)
-         progress |= nir_opt_peephole_select_impl(function->impl, limit);
+         progress |= nir_opt_peephole_select_impl(function->impl, limit,
+                                                  indirect_load_ok);
    }
 
    return progress;

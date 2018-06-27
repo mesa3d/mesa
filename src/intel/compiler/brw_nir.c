@@ -568,7 +568,18 @@ brw_nir_optimize(nir_shader *nir, const struct brw_compiler *compiler,
       OPT(nir_copy_prop);
       OPT(nir_opt_dce);
       OPT(nir_opt_cse);
-      OPT(nir_opt_peephole_select, 0);
+
+      /* For indirect loads of uniforms (push constants), we assume that array
+       * indices will nearly always be in bounds and the cost of the load is
+       * low.  Therefore there shouldn't be a performance benefit to avoid it.
+       * However, in vec4 tessellation shaders, these loads operate by
+       * actually pulling from memory.
+       */
+      const bool is_vec4_tessellation = !is_scalar &&
+         (nir->info.stage == MESA_SHADER_TESS_CTRL ||
+          nir->info.stage == MESA_SHADER_TESS_EVAL);
+      OPT(nir_opt_peephole_select, 0, is_vec4_tessellation);
+
       OPT(nir_opt_intrinsics);
       OPT(nir_opt_algebraic);
       OPT(nir_opt_constant_folding);
