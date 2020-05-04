@@ -331,16 +331,19 @@ util_queue_create_thread(struct util_queue *queue, unsigned index)
    }
 
    if (queue->flags & UTIL_QUEUE_INIT_USE_MINIMUM_PRIORITY) {
-#if defined(__linux__) && defined(SCHED_IDLE)
+#if defined(__linux__) && defined(SCHED_BATCH)
       struct sched_param sched_param = {0};
 
+      nice(19);
+
       /* The nice() function can only set a maximum of 19.
-       * SCHED_IDLE is the same as nice = 20.
+       * SCHED_BATCH however tells the OS that this is not a latency
+       * sensitive task in addition to the priority set by nice.
        *
        * Note that Linux only allows decreasing the priority. The original
        * priority can't be restored.
        */
-      pthread_setschedparam(queue->threads[index], SCHED_IDLE, &sched_param);
+      pthread_setschedparam(queue->threads[index], SCHED_BATCH, &sched_param);
 #endif
    }
    return true;
