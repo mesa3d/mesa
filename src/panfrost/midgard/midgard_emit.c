@@ -184,9 +184,9 @@ mir_pack_mask_alu(midgard_instruction *ins)
         }
 
         if (ins->alu.reg_mode == midgard_reg_mode_32)
-                ins->alu.mask = expand_writemask(effective, 4);
-        else if (ins->alu.reg_mode == midgard_reg_mode_64)
                 ins->alu.mask = expand_writemask(effective, 2);
+        else if (ins->alu.reg_mode == midgard_reg_mode_64)
+                ins->alu.mask = expand_writemask(effective, 1);
         else
                 ins->alu.mask = effective;
 }
@@ -200,7 +200,8 @@ mir_pack_swizzle(unsigned mask, unsigned *swizzle,
         unsigned sz = nir_alu_type_get_type_size(T);
 
         if (reg_mode == midgard_reg_mode_64) {
-                unsigned components = 64 / sz;
+                assert(sz == 64 || sz == 32);
+                unsigned components = (sz == 32) ? 4 : 2;
 
                 packed = mir_pack_swizzle_64(swizzle, components);
 

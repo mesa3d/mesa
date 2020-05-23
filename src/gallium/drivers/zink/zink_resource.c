@@ -434,6 +434,21 @@ zink_transfer_map(struct pipe_context *pctx,
 
    void *ptr;
    if (pres->target == PIPE_BUFFER) {
+      if (usage & PIPE_TRANSFER_READ) {
+         /* need to wait for rendering to finish
+          * TODO: optimize/fix this to be much less obtrusive
+          * mesa/mesa#2966
+          */
+         struct pipe_fence_handle *fence = NULL;
+         pctx->flush(pctx, &fence, PIPE_FLUSH_HINT_FINISH);
+         if (fence) {
+            pctx->screen->fence_finish(pctx->screen, NULL, fence,
+                                       PIPE_TIMEOUT_INFINITE);
+            pctx->screen->fence_reference(pctx->screen, &fence, NULL);
+         }
+      }
+
+
       VkResult result = vkMapMemory(screen->dev, res->mem, res->offset, res->size, 0, &ptr);
       if (result != VK_SUCCESS)
          return NULL;

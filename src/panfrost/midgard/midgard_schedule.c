@@ -355,7 +355,8 @@ mir_adjust_constant(midgard_instruction *ins, unsigned src,
                 bool upper)
 {
         unsigned type_size = nir_alu_type_get_type_size(ins->src_types[src]) / 8;
-        unsigned max_comp = 16 / type_size;
+        unsigned type_shift = util_logbase2(type_size);
+        unsigned max_comp = mir_components_for_type(ins->src_types[src]);
         unsigned comp_mask = mir_from_bytemask(mir_round_bytemask_up(
                                 mir_bytemask_of_read_components_index(ins, src),
                                 type_size * 8),
@@ -413,7 +414,7 @@ mir_adjust_constant(midgard_instruction *ins, unsigned src,
 
                 memcpy(&bundle_constants[i], constantp, type_size);
                 *bundle_constant_mask |= type_mask << best_place;
-                comp_mapping[comp] = best_place / type_size;
+                comp_mapping[comp] = best_place >> type_shift;
         }
 
         return true;

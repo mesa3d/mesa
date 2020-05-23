@@ -33,6 +33,7 @@
 #include "util/ralloc.h"
 #include "util/format/u_format.h"
 #include "util/u_pack_color.h"
+#include "util/rounding.h"
 #include "pan_util.h"
 #include "pandecode/decode.h"
 #include "panfrost-quirks.h"
@@ -1227,27 +1228,27 @@ pan_pack_color(uint32_t *packed, const union pipe_color_union *color, enum pipe_
                                   ((uint32_t) float_to_ubyte(color->f[0]) <<  0));
         } else if (format == PIPE_FORMAT_B5G6R5_UNORM) {
                 /* First, we convert the components to R5, G6, B5 separately */
-                unsigned r5 = CLAMP(color->f[0], 0.0, 1.0) * 31.0;
-                unsigned g6 = CLAMP(color->f[1], 0.0, 1.0) * 63.0;
-                unsigned b5 = CLAMP(color->f[2], 0.0, 1.0) * 31.0;
+                unsigned r5 = _mesa_roundevenf(CLAMP(color->f[0], 0.0, 1.0) * 31.0);
+                unsigned g6 = _mesa_roundevenf(CLAMP(color->f[1], 0.0, 1.0) * 63.0);
+                unsigned b5 = _mesa_roundevenf(CLAMP(color->f[2], 0.0, 1.0) * 31.0);
 
                 /* Then we pack into a sparse u32. TODO: Why these shifts? */
                 pan_pack_color_32(packed, (b5 << 25) | (g6 << 14) | (r5 << 5));
         } else if (format == PIPE_FORMAT_B4G4R4A4_UNORM) {
-                /* We scale the components against 0xF0 (=240.0), rather than 0xFF */
-                unsigned r4 = CLAMP(color->f[0], 0.0, 1.0) * 240.0;
-                unsigned g4 = CLAMP(color->f[1], 0.0, 1.0) * 240.0;
-                unsigned b4 = CLAMP(color->f[2], 0.0, 1.0) * 240.0;
-                unsigned a4 = CLAMP(clear_alpha, 0.0, 1.0) * 240.0;
+                /* Convert to 4-bits */
+                unsigned r4 = _mesa_roundevenf(CLAMP(color->f[0], 0.0, 1.0) * 15.0);
+                unsigned g4 = _mesa_roundevenf(CLAMP(color->f[1], 0.0, 1.0) * 15.0);
+                unsigned b4 = _mesa_roundevenf(CLAMP(color->f[2], 0.0, 1.0) * 15.0);
+                unsigned a4 = _mesa_roundevenf(CLAMP(clear_alpha, 0.0, 1.0) * 15.0);
 
                 /* Pack on *byte* intervals */
-                pan_pack_color_32(packed, (a4 << 24) | (b4 << 16) | (g4 << 8) | r4);
+                pan_pack_color_32(packed, (a4 << 28) | (b4 << 20) | (g4 << 12) | (r4 << 4));
         } else if (format == PIPE_FORMAT_B5G5R5A1_UNORM) {
                 /* Scale as expected but shift oddly */
-                unsigned r5 = round(CLAMP(color->f[0], 0.0, 1.0)) * 31.0;
-                unsigned g5 = round(CLAMP(color->f[1], 0.0, 1.0)) * 31.0;
-                unsigned b5 = round(CLAMP(color->f[2], 0.0, 1.0)) * 31.0;
-                unsigned a1 = round(CLAMP(clear_alpha, 0.0, 1.0)) * 1.0;
+                unsigned r5 = _mesa_roundevenf(CLAMP(color->f[0], 0.0, 1.0) * 31.0);
+                unsigned g5 = _mesa_roundevenf(CLAMP(color->f[1], 0.0, 1.0) * 31.0);
+                unsigned b5 = _mesa_roundevenf(CLAMP(color->f[2], 0.0, 1.0) * 31.0);
+                unsigned a1 = _mesa_roundevenf(CLAMP(clear_alpha, 0.0, 1.0) * 1.0);
 
                 pan_pack_color_32(packed, (a1 << 31) | (b5 << 25) | (g5 << 15) | (r5 << 5));
         } else {

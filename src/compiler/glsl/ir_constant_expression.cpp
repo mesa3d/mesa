@@ -867,13 +867,6 @@ ir_dereference_array::constant_expression_value(void *mem_ctx,
          ir_constant_data data = { { 0 } };
 
          switch (column_type->base_type) {
-         case GLSL_TYPE_UINT:
-         case GLSL_TYPE_INT:
-            for (unsigned i = 0; i < column_type->vector_elements; i++)
-               data.u[i] = array->value.u[mat_idx + i];
-
-            break;
-
          case GLSL_TYPE_FLOAT:
             for (unsigned i = 0; i < column_type->vector_elements; i++)
                data.f[i] = array->value.f[mat_idx + i];
@@ -887,8 +880,7 @@ ir_dereference_array::constant_expression_value(void *mem_ctx,
             break;
 
          default:
-            assert(!"Should not get here.");
-            break;
+            unreachable("Matrix types are either float or double.");
          }
 
          return new(mem_ctx) ir_constant(column_type, &data);

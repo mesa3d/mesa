@@ -76,6 +76,20 @@ zink_create_query(struct pipe_context *pctx,
    return (struct pipe_query *)query;
 }
 
+/* TODO: rework this to be less hammer-ish using deferred destroy */
+static void
+wait_query(struct pipe_context *pctx, struct zink_query *query)
+{
+   struct pipe_fence_handle *fence = NULL;
+
+   pctx->flush(pctx, &fence, PIPE_FLUSH_HINT_FINISH);
+   if (fence) {
+      pctx->screen->fence_finish(pctx->screen, NULL, fence,
+                                 PIPE_TIMEOUT_INFINITE);
+      pctx->screen->fence_reference(pctx->screen, &fence, NULL);
+   }
+}
+
 static void
 zink_destroy_query(struct pipe_context *pctx,
                    struct pipe_query *q)
@@ -83,7 +97,12 @@ zink_destroy_query(struct pipe_context *pctx,
    struct zink_screen *screen = zink_screen(pctx->screen);
    struct zink_query *query = (struct zink_query *)q;
 
+   if (!list_is_empty(&query->active_list)) {
+      wait_query(pctx, query);
+   }
+
    vkDestroyQueryPool(screen->dev, query->query_pool, NULL);
+   FREE(query);
 }
 
 static void
@@ -113,7 +132,7 @@ zink_begin_query(struct pipe_context *pctx,
     * the pool in the batch instead?
     */
    struct zink_batch *batch = zink_batch_no_rp(zink_context(pctx));
-   vkCmdResetQueryPool(batch->cmdbuf, query->query_pool, 0, query->curr_query);
+   vkCmdResetQueryPool(batch->cmdbuf, query->query_pool, 0, MIN2(query->curr_query + 1, query->num_queries));
    query->curr_query = 0;
 
    begin_query(ctx, query);
@@ -165,13 +184,7 @@ zink_get_query_result(struct pipe_context *pctx,
    VkQueryResultFlagBits flags = 0;
 
    if (wait) {
-      struct pipe_fence_handle *fence = NULL;
-      pctx->flush(pctx, &fence, PIPE_FLUSH_HINT_FINISH);
-      if (fence) {
-         pctx->screen->fence_finish(pctx->screen, NULL, fence,
-                                    PIPE_TIMEOUT_INFINITE);
-         pctx->screen->fence_reference(pctx->screen, &fence, NULL);
-      }
+      wait_query(pctx, query);
       flags |= VK_QUERY_RESULT_WAIT_BIT;
    } else
       pctx->flush(pctx, NULL, 0);
@@ -231,6 +244,7 @@ zink_resume_queries(struct zink_context *ctx, struct zink_batch *batch)
 {
    struct zink_query *query;
    LIST_FOR_EACH_ENTRY(query, &ctx->active_queries, active_list) {
+      vkCmdResetQueryPool(batch->cmdbuf, query->query_pool, query->curr_query, 1);
       begin_query(ctx, query);
    }
 }

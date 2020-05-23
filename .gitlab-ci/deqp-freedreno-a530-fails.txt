@@ -9,7 +9,6 @@ dEQP-GLES2.functional.texture.specification.basic_copytexsubimage2d.2d_luminance
 dEQP-GLES2.functional.texture.specification.basic_copytexsubimage2d.2d_rgb
 dEQP-GLES2.functional.texture.specification.basic_copytexsubimage2d.2d_rgba
 dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_mag_reverse_dst_y
-dEQP-GLES3.functional.texture.specification.texstorage3d.size.3d_57x63x11_2_levels
 dEQP-GLES3.functional.transform_feedback.array.interleaved.lines.lowp_float
 dEQP-GLES3.functional.transform_feedback.array.interleaved.lines.mediump_int
 dEQP-GLES3.functional.transform_feedback.array.interleaved.points.highp_mat3x2

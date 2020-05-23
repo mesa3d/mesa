@@ -160,10 +160,9 @@ static bool si_sdma_v4_copy_texture(struct si_context *sctx, struct pipe_resourc
       /* Check if everything fits into the bitfields */
       if (!(tiled_x <= (1 << 14) && tiled_y <= (1 << 14) && tiled_z <= (1 << 11) &&
             tiled_width <= (1 << 14) && tiled_height <= (1 << 14) && tiled_depth <= (1 << 11) &&
-            tiled->surface.u.gfx9.surf.epitch <= (1 << 16) && linear_x <= (1 << 14) &&
-            linear_y <= (1 << 14) && linear_z <= (1 << 11) && linear_pitch <= (1 << 14) &&
-            linear_slice_pitch <= (1 << 28) && copy_width <= (1 << 14) &&
-            copy_height <= (1 << 14) && copy_depth <= (1 << 11)))
+            linear_x <= (1 << 14) && linear_y <= (1 << 14) && linear_z <= (1 << 11) &&
+            linear_pitch <= (1 << 14) && linear_slice_pitch <= (1 << 28) &&
+            copy_width <= (1 << 14) && copy_height <= (1 << 14) && copy_depth <= (1 << 11)))
          return false;
 
       /* Check alignments */

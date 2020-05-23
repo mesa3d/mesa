@@ -477,7 +477,7 @@ static struct amdgpu_winsys_bo *amdgpu_create_bo(struct amdgpu_winsys *ws,
    amdgpu_bo_handle buf_handle;
    uint64_t va = 0;
    struct amdgpu_winsys_bo *bo;
-   amdgpu_va_handle va_handle;
+   amdgpu_va_handle va_handle = NULL;
    int r;
 
    /* VRAM or GTT must be specified, but not both at the same time. */

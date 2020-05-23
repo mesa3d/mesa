@@ -2773,8 +2773,10 @@ bit 7 for RECTLIST (clear) when z32s8 (used for clear of depth32?  not set
 	</reg32>
 	<reg32 offset="0x2140" name="RB_2D_SRC_FLAGS_LO"/>
 	<reg32 offset="0x2141" name="RB_2D_SRC_FLAGS_HI"/>
+        <reg32 offset="0x2142" name="RB_2D_SRC_FLAGS_PITCH" shr="6" type="uint"/>
 	<reg32 offset="0x2143" name="RB_2D_DST_FLAGS_LO"/>
 	<reg32 offset="0x2144" name="RB_2D_DST_FLAGS_HI"/>
+        <reg32 offset="0x2145" name="RB_2D_DST_FLAGS_PITCH" shr="6" type="uint"/>
 	<reg32 offset="0x2180" name="GRAS_2D_BLIT_CNTL"/> <!-- same as 0x2100 -->
 	<!-- looks same as 0x2107: -->
 	<reg32 offset="0x2181" name="GRAS_2D_SRC_INFO">
@@ -2902,7 +2904,20 @@ different border-color states per texture..  Looks something like:
 		<bitfield name="TYPE" low="29" high="30" type="a5xx_tex_type"/>
 	</reg32>
 	<reg32 offset="3" name="3">
+		<!--
+		ARRAY_PITCH is basically LAYERSZ for the first mipmap level, and
+		for 3d textures (laid out mipmap level first) MIN_LAYERSZ is the
+		layer size at the point that it stops being reduced moving to
+		higher (smaller) mipmap levels
+		 -->
 		<bitfield name="ARRAY_PITCH" low="0" high="13" shr="12" type="uint"/>
+		<!--
+		by default levels with w < 16 are linear
+		TILE_ALL makes all levels have tiling
+		seems required when using UBWC, since all levels have UBWC (can possibly be disabled?)
+		 -->
+		<bitfield name="TILE_ALL" pos="27" type="boolean"/>
+		<bitfield name="MIN_LAYERSZ" low="23" high="26" shr="12"/>
 		<bitfield name="FLAG" pos="28" type="boolean"/>
 	</reg32>
 	<reg32 offset="4" name="4">

@@ -145,6 +145,25 @@ mir_nontrivial_outmod(midgard_instruction *ins)
                 return mod != midgard_outmod_none;
 }
 
+/* 128 / sz = exp2(log2(128 / sz))
+ *          = exp2(log2(128) - log2(sz))
+ *          = exp2(7 - log2(sz))
+ *          = 1 << (7 - log2(sz))
+ */
+
+static unsigned
+mir_components_for_bits(unsigned bits)
+{
+        return 1 << (7 - util_logbase2(bits));
+}
+
+unsigned
+mir_components_for_type(nir_alu_type T)
+{
+        unsigned sz = nir_alu_type_get_type_size(T);
+        return mir_components_for_bits(sz);
+}
+
 uint16_t
 mir_from_bytemask(uint16_t bytemask, unsigned bits)
 {
@@ -171,7 +190,7 @@ mir_round_bytemask_up(uint16_t mask, unsigned bits)
 {
         unsigned bytes = bits / 8;
         unsigned maxmask = mask_of(bytes);
-        unsigned channels = 16 / bytes;
+        unsigned channels = mir_components_for_bits(bits);
 
         for (unsigned c = 0; c < channels; ++c) {
                 unsigned submask = maxmask << (c * bytes);
@@ -216,7 +235,7 @@ mir_upper_override(midgard_instruction *ins, unsigned inst_size)
          * (16/bytes), which simplifies to 8/bytes = 8 / (bits / 8) = 64 / bits
          * */
 
-        unsigned threshold = 64 / type_size;
+        unsigned threshold = mir_components_for_bits(type_size) >> 1;
 
         /* How many components did we shift over? */
         unsigned zeroes = __builtin_ctz(ins->mask);

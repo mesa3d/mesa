@@ -498,6 +498,7 @@ uint16_t mir_bytemask(midgard_instruction *ins);
 uint16_t mir_round_bytemask_up(uint16_t mask, unsigned bits);
 void mir_set_bytemask(midgard_instruction *ins, uint16_t bytemask);
 signed mir_upper_override(midgard_instruction *ins, unsigned inst_size);
+unsigned mir_components_for_type(nir_alu_type T);
 
 /* MIR printing */
 

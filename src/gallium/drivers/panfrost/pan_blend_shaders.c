@@ -48,29 +48,17 @@
  *
  * As is typical with Midgard, shader binaries must be accompanied by
  * information about the first tag (ORed with the bottom nibble of address,
- * like usual) and work registers. Work register count is specified in the
- * blend descriptor, as well as in the coresponding fragment shader's work
- * count. This suggests that blend shader invocation is tied to fragment shader
+ * like usual) and work registers. Work register count is assumed to be less
+ * than or equal to the coresponding fragment shader's work count. This
+ * suggests that blend shader invocation is tied to fragment shader
  * execution.
  *
- * ---
- *
- * As for blend shaders, they use the standard ISA.
- *
- * The source pixel colour, including alpha, is preloaded into r0 as a vec4 of
- * float32.
- *
- * The destination pixel colour must be loaded explicitly via load/store ops.
- * TODO: Investigate.
- *
- * They use fragment shader writeout; however, instead of writing a vec4 of
- * float32 for RGBA encoding, we writeout a vec4 of uint8, using 8-bit imov
- * instead of 32-bit fmov. The net result is that r0 encodes a single uint32
- * containing all four channels of the color.  Accordingly, the blend shader
- * epilogue has to scale all four channels by 255 and then type convert to a
- * uint8.
- *
- * ---
+ * The shaders themselves use the standard ISA. The source pixel colour,
+ * including alpha, is preloaded into r0 as a vec4 of float32. The destination
+ * pixel colour must be loaded explicitly via load/store ops, possibly
+ * performing conversions in software. The blended colour must be stored with a
+ * fragment writeout in the correct framebuffer format, either in software or
+ * via conversion opcodes on the load/store pipe.
  *
  * Blend shaders hardcode constants. Naively, this requires recompilation each
  * time the blend color changes, which is a performance risk. Accordingly, we
@@ -96,6 +84,9 @@ nir_make_options(const struct pipe_blend_state *blend, unsigned i)
         }
 
         options.logicop_enable = false;
+
+        if (!blend->independent_blend_enable)
+                i = 0;
 
         /* If blend is disabled, we just use replace mode */
 

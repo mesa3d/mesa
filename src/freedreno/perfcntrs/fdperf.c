@@ -332,7 +332,7 @@ find_device(void)
 		err(1, "could not open /dev/mem");
 
 	dev.io = mmap(0, dev.size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, dev.base);
-	if (!dev.io) {
+	if (dev.io == MAP_FAILED) {
 		close(fd);
 		err(1, "could not map device");
 	}

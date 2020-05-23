@@ -33,9 +33,11 @@
 #define SWR_VISIBLE __declspec(dllexport)
 
 #ifndef NOMINMAX
+#undef UNICODE
 #define NOMINMAX
 #include <windows.h>
 #undef NOMINMAX
+#define UNICODE
 #else
 #include <windows.h>
 #endif

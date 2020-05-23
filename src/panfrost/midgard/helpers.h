@@ -240,13 +240,13 @@ struct mir_tag_props {
  * which is used for vector units */
 
 static inline unsigned
-expand_writemask(unsigned mask, unsigned channels)
+expand_writemask(unsigned mask, unsigned log2_channels)
 {
         unsigned o = 0;
-        unsigned factor = 8 / channels;
+        unsigned factor = 8 >> log2_channels;
         unsigned expanded = (1 << factor) - 1;
 
-        for (unsigned i = 0; i < channels; ++i)
+        for (unsigned i = 0; i < (1 << log2_channels); ++i)
                 if (mask & (1 << i))
                         o |= (expanded << (factor * i));
 

@@ -1772,7 +1772,7 @@ midgard_tex_format(enum glsl_sampler_dim dim)
         }
 }
 
-/* Tries to attach an explicit LOD / bias as a constant. Returns whether this
+/* Tries to attach an explicit LOD or bias as a constant. Returns whether this
  * was successful */
 
 static bool

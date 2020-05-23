@@ -306,6 +306,8 @@ fd5_sampler_view_create(struct pipe_context *pctx, struct pipe_resource *prsc,
 		break;
 	case PIPE_TEXTURE_3D:
 		so->texconst3 =
+			A5XX_TEX_CONST_3_MIN_LAYERSZ(
+				fd_resource_slice(rsc, prsc->last_level)->size0) |
 			A5XX_TEX_CONST_3_ARRAY_PITCH(slice->size0);
 		so->texconst5 =
 			A5XX_TEX_CONST_5_DEPTH(u_minify(prsc->depth0, lvl));

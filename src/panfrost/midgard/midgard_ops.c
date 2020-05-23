@@ -182,6 +182,7 @@ struct mir_op_props alu_opcode_props[256] = {
 struct mir_ldst_op_props load_store_opcode_props[256] = {
         [midgard_op_unpack_colour] = {"unpack_colour", M32},
         [midgard_op_pack_colour] = {"pack_colour", M32},
+        [midgard_op_pack_colour_32] = {"pack_colour_32", M32},
         [midgard_op_ld_cubemap_coords] = {"ld_cubemap_coords", M32},
         [midgard_op_ld_compute_id] = {"ld_compute_id", M32},
         [midgard_op_ldst_perspective_division_z] = {"ldst_perspective_division_z", M32},
@@ -225,8 +226,8 @@ struct mir_ldst_op_props load_store_opcode_props[256] = {
         [midgard_op_ld_vary_32i] = {"ld_vary_32i", M32},
         [midgard_op_ld_vary_32u] = {"ld_vary_32u", M32},
 
-        [midgard_op_ld_color_buffer_32u]  = {"ld_color_buffer_32u",  M32 | LDST_SPECIAL_MASK},
-        [midgard_op_ld_color_buffer_u8_as_fp16] = {"ld_color_buffer_u8_as_fp16", M16 | LDST_SPECIAL_MASK},
+        [midgard_op_ld_color_buffer_32u]  = {"ld_color_buffer_32u",  M32},
+        [midgard_op_ld_color_buffer_u8_as_fp16] = {"ld_color_buffer_u8_as_fp16", M16},
         [midgard_op_ld_color_buffer_u8_as_fp16_old] = {"ld_color_buffer_u8_as_fp16_old", M16 | LDST_SPECIAL_MASK},
 
         [midgard_op_ld_ubo_char]   = {"ld_ubo_char",   M32},

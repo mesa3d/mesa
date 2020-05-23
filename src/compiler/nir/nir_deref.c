@@ -943,7 +943,9 @@ opt_deref_cast(nir_builder *b, nir_deref_instr *cast)
    /* If uses would be a bit crazy */
    assert(list_is_empty(&cast->dest.ssa.if_uses));
 
-   nir_deref_instr_remove_if_unused(cast);
+   if (nir_deref_instr_remove_if_unused(cast))
+      progress = true;
+
    return progress;
 }
 

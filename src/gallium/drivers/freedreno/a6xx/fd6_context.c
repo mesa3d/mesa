@@ -134,6 +134,7 @@ PC_UNKNOWN_9805:
 		fd6_ctx->magic.RB_CCU_CNTL_bypass = A6XX_RB_CCU_CNTL_OFFSET(0x20000);
 		fd6_ctx->magic.PC_UNKNOWN_9805 = 0x1;
 		fd6_ctx->magic.SP_UNKNOWN_A0F8 = 0x1;
+		break;
 	case 650:
 		fd6_ctx->magic.RB_UNKNOWN_8E04_blit = 0x04100000;
 		fd6_ctx->magic.RB_CCU_CNTL_gmem = A6XX_RB_CCU_CNTL_OFFSET(0x114000) |

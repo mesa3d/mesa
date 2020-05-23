@@ -1689,19 +1689,6 @@ pan_get_so(struct pipe_stream_output_info *info, gl_varying_slot loc)
         unreachable("Varying not captured");
 }
 
-/* TODO: Integers */
-static enum mali_format
-pan_xfb_format(unsigned nr_components)
-{
-        switch (nr_components) {
-                case 1: return MALI_R32F;
-                case 2: return MALI_RG32F;
-                case 3: return MALI_RGB32F;
-                case 4: return MALI_RGBA32F;
-                default: unreachable("Invalid format");
-        }
-}
-
 void
 panfrost_emit_varying_descriptor(struct panfrost_batch *batch,
                                  unsigned vertex_count,
@@ -1887,9 +1874,9 @@ panfrost_emit_varying_descriptor(struct panfrost_batch *batch,
                 struct pipe_stream_output *o = pan_get_so(so, loc);
                 ovs[i].index = o->output_buffer;
 
-                /* Set the type appropriately. TODO: Integer varyings XXX */
                 assert(o->stream == 0);
-                ovs[i].format = pan_xfb_format(o->num_components);
+                ovs[i].format = (vs->varyings[i].format & ~MALI_NR_CHANNELS(4))
+                        | MALI_NR_CHANNELS(o->num_components);
 
                 if (device->quirks & HAS_SWIZZLES)
                         ovs[i].swizzle = panfrost_get_default_swizzle(o->num_components);

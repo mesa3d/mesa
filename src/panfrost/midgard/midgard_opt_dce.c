@@ -73,9 +73,14 @@ midgard_opt_dead_code_eliminate_block(compiler_context *ctx, midgard_block *bloc
         mir_foreach_instr_in_block_rev(block, ins) {
                 if (can_cull_mask(ctx, ins)) {
                         unsigned type_size = nir_alu_type_get_type_size(ins->dest_type);
+                        unsigned round_size = type_size;
                         unsigned oldmask = ins->mask;
 
-                        unsigned rounded = mir_round_bytemask_up(live[ins->dest], type_size);
+                        /* Make sure we're packable */
+                        if (type_size == 16 && ins->type == TAG_LOAD_STORE_4)
+                                round_size = 32;
+
+                        unsigned rounded = mir_round_bytemask_up(live[ins->dest], round_size);
                         unsigned cmask = mir_from_bytemask(rounded, type_size);
 
                         ins->mask &= cmask;

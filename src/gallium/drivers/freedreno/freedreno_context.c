@@ -438,7 +438,7 @@ fd_context_init(struct fd_context *ctx, struct pipe_screen *pscreen,
 	}
 
 #if DETECT_OS_ANDROID
-	if (fd_mesa_debug && FD_DBG_LOG) {
+	if (fd_mesa_debug & FD_DBG_LOG) {
 		static unsigned idx = 0;
 		char *p;
 		asprintf(&p, "/data/fdlog/%s-%d.log", util_get_process_name(), idx++);

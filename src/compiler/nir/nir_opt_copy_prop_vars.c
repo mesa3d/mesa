@@ -868,6 +868,7 @@ copy_prop_vars_block(struct copy_prop_var_state *state,
                b->cursor = nir_instr_remove(instr);
                nir_ssa_def *u = nir_ssa_undef(b, 1, intrin->dest.ssa.bit_size);
                nir_ssa_def_rewrite_uses(&intrin->dest.ssa, nir_src_for_ssa(u));
+               state->progress = true;
                break;
             }
          }
@@ -948,6 +949,7 @@ copy_prop_vars_block(struct copy_prop_var_state *state,
             /* Storing to an invalid index is a no-op. */
             if (vec_index >= vec_comps) {
                nir_instr_remove(instr);
+               state->progress = true;
                break;
             }
          }
@@ -965,6 +967,7 @@ copy_prop_vars_block(struct copy_prop_var_state *state,
              * store is redundant so remove it.
              */
             nir_instr_remove(instr);
+            state->progress = true;
          } else {
             struct value value = {0};
             value_set_ssa_components(&value, intrin->src[1].ssa,

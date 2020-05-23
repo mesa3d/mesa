@@ -61,7 +61,7 @@ if [ -n "$CI_NODE_INDEX" ]; then
 fi
 
 if [ -n "$DEQP_CASELIST_FILTER" ]; then
-    sed -i "/$DEQP_CASELIST_FILTER/p" /tmp/case-list.txt
+    sed -ni "/$DEQP_CASELIST_FILTER/p" /tmp/case-list.txt
 fi
 
 if [ ! -s /tmp/case-list.txt ]; then

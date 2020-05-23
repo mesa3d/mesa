@@ -415,6 +415,9 @@ typedef enum {
         /* Packs a colour from fp16 to a native format */
         midgard_op_pack_colour   = 0x09,
 
+        /* Likewise packs from fp32 */
+        midgard_op_pack_colour_32 = 0x0A,
+
         /* Unclear why this is on the L/S unit, but moves fp32 cube map
          * coordinates in r27 to its cube map texture coordinate destination
          * (e.g r29). */
@@ -724,7 +727,7 @@ __attribute__((__packed__))
 
         /* In immediate mode, each offset field is an immediate range [0, 7].
          *
-         * In register mode, offset_x becomes a register full / select / upper
+         * In register mode, offset_x becomes a register (full, select, upper)
          * triplet followed by a vec3 swizzle is splattered across
          * offset_y/offset_z in a genuinely bizarre way.
          *

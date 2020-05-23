@@ -321,7 +321,7 @@ vlVaHandleVAProcPipelineParameterBufferType(vlVaDriver *drv, vlVaContext *contex
          VAProcFilterParameterBufferDeinterlacing *deint = buf->data;
          switch (deint->algorithm) {
          case VAProcDeinterlacingBob:
-            if (deint->flags & VA_DEINTERLACING_BOTTOM_FIELD)
+            if (deint->flags & VA_DEINTERLACING_BOTTOM_FIELD_FIRST)
                deinterlace = VL_COMPOSITOR_BOB_BOTTOM;
             else
                deinterlace = VL_COMPOSITOR_BOB_TOP;
@@ -333,7 +333,7 @@ vlVaHandleVAProcPipelineParameterBufferType(vlVaDriver *drv, vlVaContext *contex
 
          case VAProcDeinterlacingMotionAdaptive:
             src = vlVaApplyDeint(drv, context, param, src,
-				 !!(deint->flags & VA_DEINTERLACING_BOTTOM_FIELD));
+				 !!(deint->flags & VA_DEINTERLACING_BOTTOM_FIELD_FIRST));
             break;
 
          default:
