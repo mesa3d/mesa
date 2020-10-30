@@ -132,6 +132,9 @@
 
 #include <iostream>
 
+/* without the line below, ninja fails with "../src/mesa/main/macros.h(774): error: identifier "signbit" is undefined"
+with both clang++/llvm 7.0.1 and intel icpc 2018 */
+using std::signbit;
 #include "st_glsl_to_tgsi_array_merge.h"
 
 #if __cplusplus >= 201402L
