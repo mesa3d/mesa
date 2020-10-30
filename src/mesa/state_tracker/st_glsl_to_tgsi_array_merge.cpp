@@ -132,6 +132,7 @@
 
 #include <iostream>
 
+using std::signbit;
 #include "st_glsl_to_tgsi_array_merge.h"
 
 #if __cplusplus >= 201402L
